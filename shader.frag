@@ -14,15 +14,35 @@ layout (location = 0) out vec4 out_color;
 
 vec3 raymarch(vec3 ro, vec3 rd) {
     float t = 0.0;
-    for(int i = 0; i < 100; i++) {
+
+    float G=6.0;
+    float M=3000;
+    float c=300.0;
+    float R=2.0*G*M/(c*c); // Schwarzschild radius
+
+    for(int i = 0; i < 10000; i++) {
         vec3 p = ro + rd * t;
-        float d = length(p) - 1.0; // distance to sphere of radius 1
-        if(d < 0.01) {
-            return vec3(dot(p,vec3(0.5773))); // hit
-        }else if(d> 100.0) {
-            break; // too far
+        // vec3 p = ro;
+
+        // float d = length(p) - 1.0; // distance to sphere of radius 1
+        // if(d < 0.01) {
+        //     return vec3(dot(p,vec3(0.5773))); // hit
+        // }else if(d> 100.0) {
+        //     return vec3(1.0,0.0,0.0); // too far
+        // }
+
+        float d = length(p);
+        if(d<R) {
+            return vec3(0.0,0.0,0.0); // hit black hole
+        }else if(d>100.0){
+            return vec3(1.0,0.0,0.0); // too far
         }
-        t+=d;
+        vec3 acc = -normalize(p) * (G * M) / (d * d);
+        // rd=normalize(rd+acc*0.1);
+        rd+=acc*0.1;
+        ro+=rd*0.1;
+
+        t+=0.1;
     }
     return vec3(1.0,0.0,0.0); // miss
     
