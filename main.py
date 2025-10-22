@@ -7,85 +7,38 @@ import moderngl
 import numpy as np
 import pygame
 
+from PIL import Image
+
 os.environ['SDL_WINDOWS_DPI_AWARENESS'] = 'permonitorv2'
 
 pygame.init()
 pygame.display.set_mode((600, 600), flags=pygame.OPENGL | pygame.DOUBLEBUF, vsync=True)
 
 
+class ImageTexture:
+    def __init__(self, path):
+        self.ctx = moderngl.get_context()
+
+        img = Image.open(path).convert('RGBA')
+        self.texture = self.ctx.texture(img.size, 4, img.tobytes())
+        self.sampler = self.ctx.sampler(texture=self.texture)
+
+    def use(self):
+        self.sampler.use()
+
+def rotate_vector_around_axis(vector, angle_radians, axis):
+    axis = glm.normalize(axis)
+    rotation_matrix = glm.rotate(glm.mat4(1.0), angle_radians, axis)
+    rotated_vector = glm.vec3(rotation_matrix * glm.vec4(vector, 1.0))
+    return rotated_vector
+
 class Scene:
     def __init__(self):
         self.ctx = moderngl.get_context()
 
         self.program = self.ctx.program(
-            vertex_shader='''
-                #version 330 core
-
-                //uniform mat4 camera;
-                //uniform vec3 position;
-                //uniform float scale;
-
-                layout (location = 0) in vec3 in_vertex;
-                layout (location = 1) in vec3 in_color;
-                out vec3 color;
-
-                void main() {
-                    //gl_Position = camera * vec4(position + in_vertex * scale, 1.0);
-                    gl_Position = vec4(in_vertex, 1.0);
-                    color= in_color;
-                }
-            ''',
-            fragment_shader='''
-                #version 330 core
-
-                // uniform vec3 color;
-                uniform vec3 position;
-                in vec3 color;
-
-                layout (location = 0) out vec4 out_color;
-
-                float hash(vec3 p) {
-                    p = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3));
-                    p *= 17.0;
-                    return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
-                }
-
-                float starfield(vec3 dir) {
-                    // project dir to a grid
-                    vec3 p = normalize(dir) * 100.0;   // scale to control density
-                    float h = hash(floor(p));          // random per-cell value
-
-                    // threshold for stars — sparse and binary
-                    return step(0.999, h);  // 1 if h > 0.995 else 0
-                }
-
-                vec3 raymarch(vec3 ro, vec3 rd) {
-                    float t = 0.0;
-                    for(int i = 0; i < 100; i++) {
-                        vec3 p = ro + rd * t;
-                        float d = length(p) - 1.0; // distance to sphere of radius 1
-                        if(d < 0.01) {
-                            return vec3(dot(p,vec3(0.5773))); // hit
-                        }else if(d> 100.0) {
-                            break; // too far
-                        }
-                        t+=d;
-                    }
-                    return vec3(1.0,0.0,0.0); // miss
-                    
-                }
-
-                void main() {
-                    vec3 dir = normalize((color*2.0-1.0) - vec3(0.0, 0.0, 1.0));
-                    vec3 res = raymarch(position, dir);
-                    if(res==vec3(1.0,0.0,0.0)){
-                        out_color = vec4(vec3(starfield(dir)*0.5),1.0);
-                        return;
-                    }
-                    out_color = vec4(res, 1.0);
-                    return;
-                }
-            ''',
+            vertex_shader=open('shader.vert').read(),
+            fragment_shader=open('shader.frag').read(),
         )
 
         vertices = np.array([
@@ -98,7 +51,7 @@ class Scene:
             1.0, 1.0, 0.0,
         ])
 
-
+        self.starfield= ImageTexture('starfield.jpg')
 
         colors = np.array([
             0.0, 1.0, 0.0,
@@ -116,13 +69,62 @@ class Scene:
             (self.vbo, '3f', 'in_vertex'),
             (self.cbo, '3f', 'in_color'),
             ])
+        self.position=(0.0, 0.0, 3.0)
+        self.lookat=(0.0, 0.0, -3.0)
+        self.up=(0.0,1.0,0.0)
+
+    def keyboard_control(self):    
+        # CONTROLS
+        # MOVEMENT: WASD
+        # LOOK: MOUSE
+        # ROLL: Q/E
+        # implement the keyboard events
+        fwd=glm.normalize((self.lookat[0]-self.position[0],self.lookat[1]-self.position[1],self.lookat[2]-self.position[2]))
+        right=glm.cross(fwd, self.up)
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_w]:
+            self.position+=fwd*0.01
+        if keys[pygame.K_s]:
+            self.position-=fwd*0.01
+        if keys[pygame.K_a]:
+            self.position-=right*0.01
+        if keys[pygame.K_d]:
+            self.position+=right*0.01
+        if keys[pygame.K_q]:
+            self.up=rotate_vector_around_axis(self.up, math.radians(-0.1), fwd)
+        if keys[pygame.K_e]:
+            self.up=rotate_vector_around_axis(self.up, math.radians(0.1), fwd)
+        if keys[pygame.K_UP]:
+            self.lookat=(self.lookat[0]+(self.up[0]*0.01),self.lookat[1]+(self.up[1]*0.01),self.lookat[2]+(self.up[2]*0.01))
+        if keys[pygame.K_DOWN]:
+            self.lookat=(self.lookat[0]+(self.up[0]*-0.01),self.lookat[1]+(self.up[1]*-0.01),self.lookat[2]+(self.up[2]*-0.01))
+        if keys[pygame.K_LEFT]:
+            self.lookat=(self.lookat[0]+(right[0]*-0.01),self.lookat[1]+(right[1]*-0.01),self.lookat[2]+(right[2]*-0.01))
+        if keys[pygame.K_RIGHT]:
+            self.lookat=(self.lookat[0]+(right[0]*0.01),self.lookat[1]+(right[1]*0.01),self.lookat[2]+(right[2]*0.01))
+
+        
+
+    
 
     def render(self):
-
         self.ctx.clear()
         self.ctx.enable(self.ctx.DEPTH_TEST)
 
-        self.program['position'] = (0.0, 0.0, 3.0)
+        now = pygame.time.get_ticks() / 1000.0
+
+        # self.position=(math.sin(now)*3.0, math.sin(now*0.5), math.cos(now)*3.0)
+        # self.lookat=(-math.sin(now)*3.0, math.sin(now*0.75), -math.cos(now)*3.0)
+        # self.up=(0.0,1.0,0.0)
+
+        # self.program['position'] = (math.sin(now)*3.0, math.sin(now*0.5), math.cos(now)*3.0)
+        # self.program['lookat'] = (-math.sin(now)*3.0, math.sin(now*0.75), -math.cos(now)*3.0)
+        # self.program['up'] = (0.0,1.0,0.0)
+        self.program['position'] = self.position
+        self.program['lookat'] = self.lookat
+        self.program['up'] = self.up
+        self.starfield.use()
+
         self.vao.render()
 
 
@@ -135,5 +137,6 @@ while True:
             sys.exit()
 
     scene.render()
+    scene.keyboard_control()
 
     pygame.display.flip()
