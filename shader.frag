@@ -17,9 +17,9 @@ vec3 raymarch(vec3 ro, vec3 rd) {
 
     float G=6.0;
     float c=300.0;
-    float R=0.0001; // Schwarzschild radius
+    float R=0.25; // Schwarzschild radius
     // float R=2.0*G*M/(c*c); // Schwarzschild radius
-    float M=R*c*c/(2.0*G);
+    float M=0.75;
 
 
     float d = length(ro);
