@@ -81,6 +81,7 @@ class Scene:
         # implement the keyboard events
         fwd=glm.normalize((self.lookat[0]-self.position[0],self.lookat[1]-self.position[1],self.lookat[2]-self.position[2]))
         right=glm.cross(fwd, self.up)
+        rotRate=0.05
         keys = pygame.key.get_pressed()
         if keys[pygame.K_w]:
             self.position+=fwd*0.01
@@ -95,13 +96,13 @@ class Scene:
         if keys[pygame.K_e]:
             self.up=rotate_vector_around_axis(self.up, math.radians(0.1), fwd)
         if keys[pygame.K_UP]:
-            self.lookat=(self.lookat[0]+(self.up[0]*0.01),self.lookat[1]+(self.up[1]*0.01),self.lookat[2]+(self.up[2]*0.01))
+            self.lookat=(self.lookat[0]+(self.up[0]*rotRate),self.lookat[1]+(self.up[1]*rotRate),self.lookat[2]+(self.up[2]*rotRate))
         if keys[pygame.K_DOWN]:
-            self.lookat=(self.lookat[0]+(self.up[0]*-0.01),self.lookat[1]+(self.up[1]*-0.01),self.lookat[2]+(self.up[2]*-0.01))
+            self.lookat=(self.lookat[0]+(self.up[0]*-rotRate),self.lookat[1]+(self.up[1]*-rotRate),self.lookat[2]+(self.up[2]*-rotRate))
         if keys[pygame.K_LEFT]:
-            self.lookat=(self.lookat[0]+(right[0]*-0.01),self.lookat[1]+(right[1]*-0.01),self.lookat[2]+(right[2]*-0.01))
+            self.lookat=(self.lookat[0]+(right[0]*-rotRate),self.lookat[1]+(right[1]*-rotRate),self.lookat[2]+(right[2]*-rotRate))
         if keys[pygame.K_RIGHT]:
-            self.lookat=(self.lookat[0]+(right[0]*0.01),self.lookat[1]+(right[1]*0.01),self.lookat[2]+(right[2]*0.01))
+            self.lookat=(self.lookat[0]+(right[0]*rotRate),self.lookat[1]+(right[1]*rotRate),self.lookat[2]+(right[2]*rotRate))
 
         
 

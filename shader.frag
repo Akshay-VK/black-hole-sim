@@ -11,11 +11,25 @@ in vec3 color;
 
 layout (location = 0) out vec4 out_color;
 
+float sdRoundedCylinder( vec3 p, float ra, float rb, float h )
+{
+  vec2 d = vec2( length(p.xz)-ra+rb, abs(p.y) - h + rb );
+  return min(max(d.x,d.y),0.0) + length(max(d,0.0)) - rb;
+}
+
+vec3 bg(vec3 dir){
+    vec2 uv_coord=vec2(
+        0.5+(atan(dir.x,dir.z)/6.283185),
+        0.5+(asin(dir.y)/3.141592)
+    );
+    return texture(starfield, uv_coord).xyz;
+}
+
 
 vec3 raymarch(vec3 ro, vec3 rd) {
     float t = 0.0;
 
-    float G=6.0;
+    float G=3.0;
     float c=300.0;
     float R=0.25; // Schwarzschild radius
     // float R=2.0*G*M/(c*c); // Schwarzschild radius
@@ -24,7 +38,7 @@ vec3 raymarch(vec3 ro, vec3 rd) {
 
     float d = length(ro);
     vec3 original_rd=normalize(rd);
-    for(int i = 0; i < 1000; i++) {
+    for(int i = 0; i < 10000; i++) {
         // vec3 p = ro + rd * t;
         vec3 p = ro;
 
@@ -38,12 +52,12 @@ vec3 raymarch(vec3 ro, vec3 rd) {
         if(d<R) {
             return vec3(0.0,0.0,0.0); // hit black hole
         }
-        // else if(d>100.0){
-        //     return vec3(1.0,0.0,0.0); // too far
-        // }
-        // vec3 acc = -normalize(p) * (G * M) / (d * d);
-        rd=normalize(rd-(p*(0.1/pow(d,3.0))*M));
-        // rd+=acc*0.1;
+        else if(d>200.0){
+            return bg(rd); // too far
+        }
+        vec3 acc = -normalize(p) * (G * M) / (d * d);
+        // rd=normalize(rd-(p*(0.1/pow(d,3.0))*M));
+        rd+=acc*0.1;
         ro+=rd*1.0;
 
         // t+=0.1;
@@ -54,11 +68,8 @@ vec3 raymarch(vec3 ro, vec3 rd) {
     // }
     
     // return vec3(1.0,0.0,0.0); // miss
-    vec2 uv_coord=vec2(
-        0.5+(atan(rd.x,rd.z)/6.283185),
-        0.5+(asin(rd.y)/3.141592)
-    );
-    return texture(starfield, uv_coord).xyz;
+    
+    return bg(rd);
     
 }
 
@@ -72,11 +83,7 @@ void main() {
     vec3 dir = normalize(viewRot*(color*2.0-1.0));
     vec3 res = raymarch(position, dir);
     if(res==vec3(1.0,0.0,0.0)){
-        vec2 uv_coord=vec2(
-            0.5+(atan(dir.x,dir.z)/6.283185),
-            0.5+(asin(dir.y)/3.141592)
-        );
-        out_color = texture(starfield, uv_coord);
+        out_color = vec4(bg(dir), 1.0);
         return;
     }
     out_color = vec4(res, 1.0);
