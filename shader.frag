@@ -16,13 +16,17 @@ vec3 raymarch(vec3 ro, vec3 rd) {
     float t = 0.0;
 
     float G=6.0;
-    float M=3000;
     float c=300.0;
-    float R=2.0*G*M/(c*c); // Schwarzschild radius
+    float R=0.0001; // Schwarzschild radius
+    // float R=2.0*G*M/(c*c); // Schwarzschild radius
+    float M=R*c*c/(2.0*G);
 
-    for(int i = 0; i < 10000; i++) {
-        vec3 p = ro + rd * t;
-        // vec3 p = ro;
+
+    float d = length(ro);
+    vec3 original_rd=normalize(rd);
+    for(int i = 0; i < 1000; i++) {
+        // vec3 p = ro + rd * t;
+        vec3 p = ro;
 
         // float d = length(p) - 1.0; // distance to sphere of radius 1
         // if(d < 0.01) {
@@ -30,21 +34,31 @@ vec3 raymarch(vec3 ro, vec3 rd) {
         // }else if(d> 100.0) {
         //     return vec3(1.0,0.0,0.0); // too far
         // }
-
-        float d = length(p);
+        d=length(p);
         if(d<R) {
             return vec3(0.0,0.0,0.0); // hit black hole
-        }else if(d>100.0){
-            return vec3(1.0,0.0,0.0); // too far
         }
-        vec3 acc = -normalize(p) * (G * M) / (d * d);
-        // rd=normalize(rd+acc*0.1);
-        rd+=acc*0.1;
-        ro+=rd*0.1;
+        // else if(d>100.0){
+        //     return vec3(1.0,0.0,0.0); // too far
+        // }
+        // vec3 acc = -normalize(p) * (G * M) / (d * d);
+        rd=normalize(rd-(p*(0.1/pow(d,3.0))*M));
+        // rd+=acc*0.1;
+        ro+=rd*1.0;
 
-        t+=0.1;
+        // t+=0.1;
     }
-    return vec3(1.0,0.0,0.0); // miss
+    // return vec3(dot(original_rd,rd));
+    // if(d>10000.0){
+    //     return vec3(1.0,0.0,0.0); // too far
+    // }
+    
+    // return vec3(1.0,0.0,0.0); // miss
+    vec2 uv_coord=vec2(
+        0.5+(atan(rd.x,rd.z)/6.283185),
+        0.5+(asin(rd.y)/3.141592)
+    );
+    return texture(starfield, uv_coord).xyz;
     
 }
 
