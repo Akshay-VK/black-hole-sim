@@ -106,21 +106,21 @@ vec3 raymarch(vec3 ro, vec3 rd) {
         vec3 p = ro;
 
         // ---- ACCRETION DISK PART ----
-        float d = distanceFunction(p); // distance to sphere of radius 1
-        if(d < -0.01) {
-            float v = fbm(p*4.0);
-            float density=densityFunc(p);
-            // return vec3(dot(p,sunDirection)); // hit SOLID SPHERE
+        // float d = distanceFunction(p); // distance to sphere of radius 1
+        // if(d < -0.01) {
+        //     float v = fbm(p*4.0);
+        //     float density=densityFunc(p);
+        //     // return vec3(dot(p,sunDirection)); // hit SOLID SPHERE
 
-            float diffuse = clamp((density - densityFunc(p + 0.3 * sunDirection)) / 0.3, 0.0, 1.0 );
-            vec3 lin = vec3(0.0) * 1.1 + 0.8 * vec3(1.0) * diffuse;
+        //     float diffuse = clamp((density - densityFunc(p + 0.3 * sunDirection)) / 0.3, 0.0, 1.0 );
+        //     vec3 lin = vec3(0.0) * 1.1 + 0.8 * vec3(1.0) * diffuse;
 
-            vec3 color = mix(vec3(0.98,0.84,0.39), vec3(0.0, 0.0, 0.0), density*density);
-            color.rgb *= density*lin*2.0;
-            res += color * (1.0 -density);
-        }else if(d> 100.0) {
-            return bg(normalize(rd)); // too far
-        }
+        //     vec3 color = mix(vec3(0.98,0.84,0.39), vec3(0.0, 0.0, 0.0), density*density);
+        //     color.rgb *= density*lin*2.0;
+        //     res += color * (1.0 -density);
+        // }else if(d> 100.0) {
+        //     return bg(normalize(rd)); // too far
+        // }
         // -------------------------
 
         // ---- BLACK HOLE PART ----
@@ -139,16 +139,41 @@ vec3 raymarch(vec3 ro, vec3 rd) {
         ////     }
         //// }
 
+        float dt=0.01;
 
-        //// vec3 acc = -normalize(p) * (G * M) / (d * d);
+        //---- RK4-----
+        //r0=o
+        //v0=rd
+        vec3 a0 = -normalize(p) * (G * M) / (d * d);
+        vec3 v1 = rd+(a0*dt*0.5);
+        vec3 r1 = p+(rd*dt*0.5);
+        float d1 = length(r1);
 
-        rd=normalize(rd-(G*p*(0.2/pow(d,3.0))*M));
+        vec3 a1 = -normalize(r1) * (G * M) / (d1 * d1);
+        vec3 v2 = rd+(a1*dt*0.5);
+        vec3 r2 = p+(v1*dt*0.5);
+        float d2 = length(r2);
+
+        vec3 a2 = -normalize(r2) * (G * M) / (d2 * d2);
+        vec3 v3 = rd+(a2*dt);
+        vec3 r3 = p+(v2*dt);
+        float d3 = length(r3);
+
+        vec3 a4 = -normalize(r3) * (G * M) / (d3 * d3);
+        vec3 v4 = rd+(a4*dt);
+
+        vec3 acc = (a0 + 2.0*a1 + 2.0*a2 + a4)*dt / 6.0;
+        vec3 vel = (rd + 2.0*v1 + 2.0*v2 + v4)*dt / 6.0;
+        // ------------
+
+        rd=normalize(vel);
+        // rd=normalize(rd-(G*p*(0.2/pow(d,3.0))*M));
 
         // rd+=acc*0.1;
         // rd=normalize(rd);
         // ---- BLACK HOLE PART ----
 
-        ro += rd * 0.1;
+        ro += rd * 0.5;
 
         // t+=0.1;
     }
