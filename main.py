@@ -91,10 +91,14 @@ class Scene:
             self.position-=right*0.01
         if keys[pygame.K_d]:
             self.position+=right*0.01
+        if keys[pygame.K_f]:
+            self.position=(self.position[0]-self.up[0]*0.01,self.position[1]-self.up[1]*0.01,self.position[2]-self.up[2]*0.01)
+        if keys[pygame.K_r]:
+            self.position=(self.position[0]+self.up[0]*0.01,self.position[1]+self.up[1]*0.01,self.position[2]+self.up[2]*0.01)
         if keys[pygame.K_q]:
-            self.up=rotate_vector_around_axis(self.up, math.radians(-0.1), fwd)
+            self.up=rotate_vector_around_axis(self.up, math.radians(-0.5), fwd)
         if keys[pygame.K_e]:
-            self.up=rotate_vector_around_axis(self.up, math.radians(0.1), fwd)
+            self.up=rotate_vector_around_axis(self.up, math.radians(0.5), fwd)
         if keys[pygame.K_UP]:
             self.lookat=(self.lookat[0]+(self.up[0]*rotRate),self.lookat[1]+(self.up[1]*rotRate),self.lookat[2]+(self.up[2]*rotRate))
         if keys[pygame.K_DOWN]:

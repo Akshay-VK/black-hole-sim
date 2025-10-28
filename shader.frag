@@ -79,8 +79,10 @@ float distanceFunction(vec3 p) {
 }
 
 float densityFunc(vec3 p){
-    float v = fbm(p*3.0);
-    return (-distanceFunction(p)*v);
+    float v = fbm(p*10.0);
+    float val =(-distanceFunction(p)*v);
+    // return 0.5*(pow(val,0.4)+1.0);
+    return val;
 }
 
 vec3 raymarch(vec3 ro, vec3 rd) {
@@ -99,10 +101,11 @@ vec3 raymarch(vec3 ro, vec3 rd) {
 
     float d = length(ro);
     vec3 original_rd=normalize(rd);
-    for(int i = 0; i < 1000; i++) {
+    for(int i = 0; i < 500; i++) {
         // vec3 p = ro + rd * t;
         vec3 p = ro;
 
+        // ---- ACCRETION DISK PART ----
         float d = distanceFunction(p); // distance to sphere of radius 1
         if(d < -0.01) {
             float v = fbm(p*4.0);
@@ -111,14 +114,14 @@ vec3 raymarch(vec3 ro, vec3 rd) {
 
             float diffuse = clamp((density - densityFunc(p + 0.3 * sunDirection)) / 0.3, 0.0, 1.0 );
             vec3 lin = vec3(0.0) * 1.1 + 0.8 * vec3(1.0) * diffuse;
-            // vec3 lin = bg(normalize(rd)) * 1.1 + 0.8 * vec3(1.0) * diffuse;
 
-            vec3 color = mix(vec3(1.0,1.0,1.0), vec3(0.0, 0.0, 0.0), density);
-            color.rgb *= density*lin;
+            vec3 color = mix(vec3(0.98,0.84,0.39), vec3(0.0, 0.0, 0.0), density*density);
+            color.rgb *= density*lin*2.0;
             res += color * (1.0 -density);
         }else if(d> 100.0) {
             return bg(normalize(rd)); // too far
         }
+        // -------------------------
 
         // ---- BLACK HOLE PART ----
         d=length(p);
@@ -139,7 +142,7 @@ vec3 raymarch(vec3 ro, vec3 rd) {
 
         //// vec3 acc = -normalize(p) * (G * M) / (d * d);
 
-        rd=normalize(rd-(G*p*(0.1/pow(d,3.0))*M));
+        rd=normalize(rd-(G*p*(0.2/pow(d,3.0))*M));
 
         // rd+=acc*0.1;
         // rd=normalize(rd);
