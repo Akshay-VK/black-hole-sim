@@ -81,16 +81,16 @@ class Scene:
         # implement the keyboard events
         fwd=glm.normalize((self.lookat[0]-self.position[0],self.lookat[1]-self.position[1],self.lookat[2]-self.position[2]))
         right=glm.cross(fwd, self.up)
-        rotRate=0.05
+        translateRate=rotRate=0.05
         keys = pygame.key.get_pressed()
         if keys[pygame.K_w]:
-            self.position+=fwd*0.01
+            self.position+=fwd*translateRate
         if keys[pygame.K_s]:
-            self.position-=fwd*0.01
+            self.position-=fwd*translateRate
         if keys[pygame.K_a]:
-            self.position-=right*0.01
+            self.position-=right*translateRate
         if keys[pygame.K_d]:
-            self.position+=right*0.01
+            self.position+=right*translateRate
         if keys[pygame.K_f]:
             self.position=(self.position[0]-self.up[0]*0.01,self.position[1]-self.up[1]*0.01,self.position[2]-self.up[2]*0.01)
         if keys[pygame.K_r]:
@@ -107,6 +107,15 @@ class Scene:
             self.lookat=(self.lookat[0]+(right[0]*-rotRate),self.lookat[1]+(right[1]*-rotRate),self.lookat[2]+(right[2]*-rotRate))
         if keys[pygame.K_RIGHT]:
             self.lookat=(self.lookat[0]+(right[0]*rotRate),self.lookat[1]+(right[1]*rotRate),self.lookat[2]+(right[2]*rotRate))
+        if keys[pygame.K_l]:
+            print("Position:", self.position)
+            print("Lookat:", self.lookat)
+            print("Up:", self.up)
+            distance=math.sqrt(self.position[0]**2+self.position[1]**2+self.position[2]**2)#0.01+(pow(d/10.0,3.0))
+            print("Distance from black hole: ", distance)
+            print("dt: ", (0.04+math.pow(distance/26.0,3.0)))
+            print("time: ", pygame.time.get_ticks()/1000.0)
+            print("-----")
 
         
 
@@ -128,6 +137,7 @@ class Scene:
         self.program['position'] = self.position
         self.program['lookat'] = self.lookat
         self.program['up'] = self.up
+        self.program['time'] = now
         self.starfield.use()
 
         self.vao.render()
