@@ -94,7 +94,7 @@ class Scene:
         if keys[pygame.K_f]:
             self.position=(self.position[0]-self.up[0]*0.01,self.position[1]-self.up[1]*0.01,self.position[2]-self.up[2]*0.01)
         if keys[pygame.K_r]:
-            self.position=(self.position[0]+self.up[0]*0.01,self.position[1]+self.up[1]*0.01,self.position[2]+self.up[2]*0.01)
+            self.position=(self.position[0]+self.up[0]*0.07,self.position[1]+self.up[1]*0.07,self.position[2]+self.up[2]*0.07)
         if keys[pygame.K_q]:
             self.up=rotate_vector_around_axis(self.up, math.radians(-0.5), fwd)
         if keys[pygame.K_e]:
