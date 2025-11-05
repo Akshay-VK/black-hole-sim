@@ -92,7 +92,7 @@ class Scene:
         if keys[pygame.K_d]:
             self.position+=right*translateRate
         if keys[pygame.K_f]:
-            self.position=(self.position[0]-self.up[0]*0.01,self.position[1]-self.up[1]*0.01,self.position[2]-self.up[2]*0.01)
+            self.position=(self.position[0]-self.up[0]*0.07,self.position[1]-self.up[1]*0.07,self.position[2]-self.up[2]*0.07)
         if keys[pygame.K_r]:
             self.position=(self.position[0]+self.up[0]*0.07,self.position[1]+self.up[1]*0.07,self.position[2]+self.up[2]*0.07)
         if keys[pygame.K_q]:
@@ -125,7 +125,7 @@ class Scene:
         self.ctx.clear()
         self.ctx.enable(self.ctx.DEPTH_TEST)
 
-        now = pygame.time.get_ticks() / 1000.0
+        now = pygame.time.get_ticks() / 500.0
 
         # self.position=(math.sin(now)*3.0, math.sin(now*0.5), math.cos(now)*3.0)
         # self.lookat=(-math.sin(now)*3.0, math.sin(now*0.75), -math.cos(now)*3.0)

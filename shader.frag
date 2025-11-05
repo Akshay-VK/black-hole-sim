@@ -17,12 +17,38 @@ const float Rin = 0.01;    // inner radius (scale so Rin = 1)
 const float b = 2.897e-3; // Wien's constant (m*K)
 
 // Convert wavelength (nm) to approximate RGB (linear space)
-vec3 wavelengthToRGB(float lambda) {
-    float t = clamp((lambda - 380.0) / (780.0 - 380.0), 0.0, 1.0);
-    float r = smoothstep(0.0, 0.5, 1.0 - abs(t - 0.1)*3.0);
-    float g = smoothstep(0.2, 0.6, 1.0 - abs(t - 0.5)*3.0);
-    float b = smoothstep(0.5, 0.9, 1.0 - abs(t - 0.9)*3.0);
-    return vec3(r, g, b);
+vec3 wavelengthToRGB(float wavelength) {
+    float r = 0.0;
+    float g = 0.0;
+    float b = 0.0;
+    float s = 0.0; // Intensity/saturation factor
+
+    // Adjust wavelength for perceived intensity (optional, but often desired)
+    if (wavelength >= 380.0 && wavelength < 440.0) {
+        r = -(wavelength - 440.0) / (440.0 - 380.0);
+        b = 1.0;
+    } else if (wavelength >= 440.0 && wavelength < 490.0) {
+        g = (wavelength - 440.0) / (490.0 - 440.0);
+        b = 1.0;
+    } else if (wavelength >= 490.0 && wavelength < 510.0) {
+        g = 1.0;
+        b = -(wavelength - 510.0) / (510.0 - 490.0);
+    } else if (wavelength >= 510.0 && wavelength < 580.0) {
+        r = (wavelength - 510.0) / (580.0 - 510.0);
+        g = 1.0;
+    } else if (wavelength >= 580.0 && wavelength < 645.0) {
+        r = 1.0;
+        g = -(wavelength - 645.0) / (645.0 - 580.0);
+    } else if (wavelength >= 645.0 && wavelength < 780.0) {
+        r = 1.0;
+    }
+
+    // Apply saturation/intensity factor (e.g., to fade out at the ends of the spectrum)
+    if (wavelength > 700.0) s = 0.3 + 0.7 * (780.0 - wavelength) / (780.0 - 700.0);
+    else if (wavelength < 420.0) s = 0.3 + 0.7 * (wavelength - 380.0) / (420.0 - 380.0);
+    else s = 1.0;
+
+    return vec3(r * s, g * s, b * s);
 }
 
 
@@ -90,7 +116,7 @@ float distanceFunction(vec3 p,float R) {
     // return length(p) - 1.0; // distance to sphere of radius 1
     float h=0.05;
     float ir=1*R;
-    float or=3*R;
+    float or=4*R;
     return opSubtraction(sdRoundedCylinder(p, ir, h/2.0, h),sdRoundedCylinder(p, or, h/2.0, h));
 }
 
@@ -115,10 +141,11 @@ vec3 revolve(vec3 p, float t, float d){
     return rotY * p;
 }
 
-vec3 rk4(vec3 p, float d, vec3 rd, float dt, float G, float M) {
+vec3 rk4(vec3 p, float d, vec3 rd, float dt, float G, float M, float R) {
     //(dt*G*(p/pow(d,3.0))*M)
     //new acc=G*(p/pow(d,3.0))*M
     // vec3 a0 = -normalize(p) * (G * M) / (d * d);
+    d=d-R;
     vec3 a0 = -p*(G/(d*d*d))*M;
     vec3 v1 = normalize(rd+(a0*dt*0.5));
     vec3 r1 = p+(rd*dt*0.5);
@@ -149,11 +176,11 @@ const vec3 sunDirection=vec3(0.5773);
 
 vec3 colorAt(vec3 p, float d, vec3 rd, float R, float G, float M){
     float density=densityFunc(revolve(p,time,d),R);
-    density=clamp(0.0002*density,0.1,0.5);
-    /*// density=(0.5+density)*1.5;
+    // density=clamp(density*0.00002,0.1,1.0);
+    // density=(0.5+density)*1.5;
     // return vec3(dot(p,sunDirection)); // hit SOLID SPHERE
 
-    float diffuse = clamp((density - densityFunc(p + 0.3 * sunDirection,R)) / 0.3, 0.0, 1.0 );
+    /*float diffuse = clamp((density - densityFunc(p + 0.3 * sunDirection,R)) / 0.3, 0.0, 1.0 );
     vec3 lin = vec3(0.7) * 1.1 + 0.8 * vec3(1.0) * diffuse;
 
     vec3 color = mix(vec3(0.98,0.84,0.39), vec3(0.0, 0.0, 0.0), density);
@@ -167,11 +194,19 @@ vec3 colorAt(vec3 p, float d, vec3 rd, float R, float G, float M){
     return color * (density)*2.0;*/
 
     // float lambda=(100.0/(d*d*d))*pow(1.0-(d/(R*3.0)),-0.25); //V2
-    float lambda=pow((-G*M/(d*d*d))*(1.0-(d/(R*3.0))),-0.25);
-    float m = 9.7525;
-    float c = 566.6;
-    vec3 colour = vec3(1.0,1.0,0.0);///wavelengthToRGB(m*lambda+c);
-    return colour+ 0*density;//+(density*0.001);
+    // float lambda=pow((-G*M/(d*d*d))*(1.0-(d/(R*3.0))),-0.25);// 3.01R-> 8.76 , 6R->3.53 //V3
+    
+    
+    float lambda=pow((10000*G*M/(d*d*d))*(1.0-sqrt(R/d)),0.25);// 3.01R-> 8.76 , 6R->3.53
+    float a = 3.8399;
+    float b = 5.296;
+    float normalizedVal=(((a-lambda)/(b-a))+1.0)+(dot(-rd,normalize(vec3(-p.z,0.0,p.x)))*0.5);
+    vec3 colour = wavelengthToRGB((normalizedVal*20.0)+600.0);
+    // return (colour*8.0/256.0)+vec3(density*0.5);
+    return (colour*50.0/256.0*pow(density,0.4));
+    
+    
+    // return vec3(density);//+(density*0.001);
 
 
 
@@ -190,7 +225,7 @@ vec3 raymarch(vec3 ro, vec3 rd) {
     float d = length(ro);
     vec3 original_rd=normalize(rd);
     vec3 p = ro;
-    for(int i = 0; i < 900; i++) {
+    for(int i = 0; i < 800; i++) {
         p = ro;
         // ---- ACCRETION DISK PART ----
         float d_accretion = distanceFunction(p,R); // distance to sphere of radius 1
@@ -209,8 +244,8 @@ vec3 raymarch(vec3 ro, vec3 rd) {
         }
 
 
-        float dt=0.005+(pow(d,3.0))/3246.0;
-        rd=normalize(rk4(p,d,rd,dt,G,M));
+        float dt=0.01+(pow(d,3.0))/3246.0;
+        rd=normalize(rk4(p,d,rd,dt,G,M,R));
         // rd=normalize(rd-(G*p*(0.2/pow(d,3.0))*M));
         // ---- BLACK HOLE PART ----
 
