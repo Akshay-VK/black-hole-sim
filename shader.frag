@@ -5,6 +5,8 @@ uniform vec3 position;
 uniform vec3 lookat;
 uniform vec3 up;
 uniform float time;
+uniform float G;
+uniform float accretion;
 
 uniform sampler2D starfield;
 
@@ -142,9 +144,6 @@ vec3 revolve(vec3 p, float t, float d){
 }
 
 vec3 rk4(vec3 p, float d, vec3 rd, float dt, float G, float M, float R) {
-    //(dt*G*(p/pow(d,3.0))*M)
-    //new acc=G*(p/pow(d,3.0))*M
-    // vec3 a0 = -normalize(p) * (G * M) / (d * d);
     d=d-R;
     vec3 a0 = -p*(G/(d*d*d))*M;
     vec3 v1 = normalize(rd+(a0*dt*0.5));
@@ -176,9 +175,6 @@ const vec3 sunDirection=vec3(0.5773);
 
 vec3 colorAt(vec3 p, float d, vec3 rd, float R, float G, float M){
     float density=densityFunc(revolve(p,time,d),R);
-    // density=clamp(density*0.00002,0.1,1.0);
-    // density=(0.5+density)*1.5;
-    // return vec3(dot(p,sunDirection)); // hit SOLID SPHERE
 
     /*float diffuse = clamp((density - densityFunc(p + 0.3 * sunDirection,R)) / 0.3, 0.0, 1.0 );
     vec3 lin = vec3(0.7) * 1.1 + 0.8 * vec3(1.0) * diffuse;
@@ -204,17 +200,11 @@ vec3 colorAt(vec3 p, float d, vec3 rd, float R, float G, float M){
     vec3 colour = wavelengthToRGB((normalizedVal*20.0)+600.0);
     // return (colour*8.0/256.0)+vec3(density*0.5);
     return (colour*50.0/256.0*pow(density,0.4));
-    
-    
-    // return vec3(density);//+(density*0.001);
-
-
-
     // return accretionColor(d, dot(normalize(vec3(-p.z,0.0,p.x)),rd))*density;
 }
 
 vec3 raymarch(vec3 ro, vec3 rd) {
-    float G=0.3;
+    // float G=0.3;
     float c=1.0;
     // float R=0.66; // Schwarzschild radius
     float M=1.0;
@@ -225,12 +215,14 @@ vec3 raymarch(vec3 ro, vec3 rd) {
     float d = length(ro);
     vec3 original_rd=normalize(rd);
     vec3 p = ro;
-    for(int i = 0; i < 800; i++) {
+    for(int i = 0; i < 500; i++) {
         p = ro;
         // ---- ACCRETION DISK PART ----
-        float d_accretion = distanceFunction(p,R); // distance to sphere of radius 1
-        if(d_accretion < -0.01) {
-            res += colorAt(p,d,rd,R,G,M);
+        if(accretion==1.0){
+            float d_accretion = distanceFunction(p,R); // distance to sphere of radius 1
+            if(d_accretion < -0.01) {
+                res += colorAt(p,d,rd,R,G,M);
+            }
         }
         // -------------------------
 

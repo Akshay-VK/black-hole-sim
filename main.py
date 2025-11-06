@@ -73,6 +73,9 @@ class Scene:
         self.lookat=(0.0, 0.0, -3.0)
         self.up=(0.0,1.0,0.0)
 
+        self.G=0
+        self.accretion=1
+
     def keyboard_control(self):    
         # CONTROLS
         # MOVEMENT: WASD
@@ -116,6 +119,14 @@ class Scene:
             print("dt: ", (0.04+math.pow(distance/26.0,3.0)))
             print("time: ", pygame.time.get_ticks()/1000.0)
             print("-----")
+        if keys[pygame.K_i]:
+            self.G+=0.01
+            self.G=min(0.3,max(0.0,self.G))
+        if keys[pygame.K_k]:
+            self.G-=0.01
+            self.G=min(0.3,max(0.0,self.G))
+        if keys[pygame.K_o]:
+            self.accretion=1-self.accretion
 
         
 
@@ -138,6 +149,8 @@ class Scene:
         self.program['lookat'] = self.lookat
         self.program['up'] = self.up
         self.program['time'] = now
+        self.program['G'] = self.G
+        self.program['accretion'] = self.accretion
         self.starfield.use()
 
         self.vao.render()
